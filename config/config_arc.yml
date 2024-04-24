@@ -1,0 +1,341 @@
+---
+reanalysis:
+  root: data/ERA5_reanalysis
+  start: 1960
+  end: 2017
+
+hindcast:
+  root: data/C3S_hindcast
+  start: 1981
+  end: 2016
+  systems:
+    cmcc:
+      model: CMCC-CM2-v20191201
+      members: 0..39
+    eccc:
+      model: GEM5-NEMO-v20211130
+      members: 0..9
+    ecmf:
+      model: SEAS5-v20171101
+      members: 0..24
+    edzw:
+      model: GCFS2.1-v20200320
+      members: 0..29
+    egrr:
+      model: HadGEM3-GC3.2-v20200929
+      members: 0..27
+    kwbc:
+      model: CFSv2-v20110310
+      members: 0..27
+    lfpw:
+      model: System8-v20210101
+      members: 0..24
+    rjtd:
+      model: cps3-v20220201
+      members: 0..9
+
+haduk:
+  root: data/HadUK
+  product: HadUK-Grid
+  version: v1.1.0.0
+  res: 5km
+  time_res: mon
+
+eobs:
+  root: data/EOBS
+
+modelling:
+  common_train_start: 1994
+  test_start: 2004
+  test_end: 2016
+  formulas:
+    observed:
+      P:
+        - HadUK_precip
+      P_T:
+        - HadUK_precip
+        - HadUK_t2m
+    C3S_multimodel_ensemble:
+      P:
+        - ens_precip
+        - q_mean
+      P_T:
+        - ens_precip
+        - ens_t2m
+        - q_mean
+      P_attr:
+        - ens_precip
+      P_T_attr:
+        - ens_precip
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_quantile_antP_T_attr:
+        - ens_precip_50
+        - ens_precip_05
+        - ens_precip_95
+        - ens_precip_25
+        - ens_precip_75
+        - ens_ant_precip
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_quantile_obs_antQ_T_attr:
+        - ens_precip_50
+        - ens_precip_05
+        - ens_precip_95
+        - ens_precip_25
+        - ens_precip_75
+        - ant_Q_mean
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_obs_antQ_T:
+        - ens_precip
+        - ant_Q_mean
+        - ens_t2m
+        - q_mean
+      P_obs_antQ_T_attr:
+        - ens_precip
+        - ant_Q_mean
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_antP_T:
+        - ens_precip
+        - ens_ant_precip
+        - ens_t2m
+        - q_mean
+      P_antP_T_attr:
+        - ens_precip
+        - ens_ant_precip
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+    SEAS5-v20171101:
+      P:
+        - ens_precip
+        - q_mean
+      P_T:
+        - ens_precip
+        - ens_t2m
+        - q_mean
+      P_attr:
+        - ens_precip
+      P_T_attr:
+        - ens_precip
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_quantile_antP_T_attr:
+        - ens_precip_50
+        - ens_precip_05
+        - ens_precip_95
+        - ens_precip_25
+        - ens_precip_75
+        - ens_ant_precip
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_quantile_obs_antQ_T_attr:
+        - ens_precip_50
+        - ens_precip_05
+        - ens_precip_95
+        - ens_precip_25
+        - ens_precip_75
+        - ant_Q_mean
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_obs_antQ_T:
+        - ens_precip
+        - ant_Q_mean
+        - ens_t2m
+        - q_mean
+      P_obs_antQ_T_attr:
+        - ens_precip
+        - ant_Q_mean
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95
+      P_antP_T:
+        - ens_precip
+        - ens_ant_precip
+        - ens_t2m
+        - q_mean
+      P_antP_T_attr:
+        - ens_precip
+        - ens_ant_precip
+        - ens_t2m
+        - area
+        - elev_mean
+        - dpsbar
+        - sand_perc
+        - silt_perc
+        - clay_perc
+        - porosity_hypres
+        - conductivity_hypres
+        - soil_depth_pelletier
+        - dwood_perc
+        - ewood_perc
+        - crop_perc
+        - urban_perc
+        - reservoir_cap
+        - q_mean
+        - slope_fdc
+        - baseflow_index
+        - Q5
+        - Q95

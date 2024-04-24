@@ -1,0 +1,16 @@
+name: conda_environment_r_linux
+channels:
+  - conda-forge
+dependencies:
+  - r-essentials
+  - r-tidyverse
+  - r-argparse
+  - r-devtools
+  - r-arrow
+  - r-zoo
+  - r-lubridate
+  - r-yaml
+  - r-terra
+  - r-sf
+  - r-ncdf4
+  - r-pacman

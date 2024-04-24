@@ -1,0 +1,27 @@
+name: conda_environment_base
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bottleneck
+  - cdo
+  - click
+  - dask
+  - eofs
+  - iris
+  - metpy
+  - netCDF4
+  - numba
+  - pandas
+  - python=3
+  - pip
+  - pyarrow
+  - py-xgboost
+  - scikit-learn
+  - skranger
+  - tqdm
+  - xarray
+  - pip:
+    - quantile_forest
+    - hyperopt
+    - properscoring

@@ -2,3 +2,411 @@
 # Please follow the best practices: 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
+
+
+import platform
+import math
+import re
+import pandas as pd
+import pyarrow
+
+
+configfile: 'config/config.yml'
+
+
+include: 'rules/common.smk'
+include: 'rules/platform.smk'
+
+
+rule preprocessing:
+    input:
+        expand(
+            'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
+            station=STATIONS
+        ),
+        expand(
+            'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
+            c3s_variable=C3S_VARIABLE, c3s_init_time=C3S_INIT_TIME
+        ),
+        expand(
+            'results/preprocessing/HadUK/{haduk_variable}_{haduk_time_range}.parquet',
+            haduk_variable=HADUK_VARIABLE, haduk_time_range=HADUK_TIME_RANGE
+        ),
+        expand(
+            'results/preprocessing/EFAS/{efas_time}.parquet',
+            efas_time=EFAS_TIME
+        ),
+        expand(
+            'results/preprocessing/EFAS/{efas_station}.parquet',
+            efas_station=EFAS_STATIONS
+        ),
+        expand(
+            'results/preprocessing/C3S/{station}.parquet',
+            station=STATIONS
+        ),
+        expand(
+            'results/preprocessing/HadUK/{station}.parquet',
+            station=STATIONS
+        )
+        # expand(
+        #     'results/preprocessing/merged/{station}_{season}.parquet',
+        #     station=STATIONS, season=SEASON
+        # ),
+        # expand(
+        #     'results/preprocessing/EFAS/seasonal/{efas_station}_{season}.parquet',
+        #     efas_station=EFAS_STATIONS, season=SEASON
+        # ),
+        # expand(
+        #     'results/preprocessing/EFAS/seasonal/sme_{efas_station}_{season}.parquet',
+        #     efas_station=EFAS_STATIONS, season=SEASON
+        # ),
+
+
+rule fetch_catchment_boundary:
+    output:
+        'results/preprocessing/streamflow/catchment_boundaries/{station}.gpkg'
+    conda:
+        r_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/fetch-catchment-boundaries.R'
+
+
+rule merge_catchment_boundaries:
+    input:
+        expand(
+            'results/preprocessing/streamflow/catchment_boundaries/{station}.gpkg',
+            station=STATIONS
+        )
+    output:
+        'results/preprocessing/streamflow/catchment_boundaries/merged.gpkg'
+    conda:
+        r_env_file
+    script:
+        'scripts/merge-catchment-boundaries.R'
+
+
+rule fetch_streamflow_data:
+    input:
+        'results/preprocessing/streamflow/catchment_boundaries/{station}.gpkg'
+    output:
+        'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
+    conda:
+        r_env_file
+    params:
+        normalize=True
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/fetch-streamflow-data.R'
+
+
+rule extract_c3s_data:
+    """Extract precipitation/temperature for each catchment.
+
+    Note that only data from model/members specified in the
+    configuration file is returned.
+    """
+    input:
+        'data/C3S_hindcast_daily_SEAS5/ecmf_SEAS5-v20171101_hindcast_S{c3s_init_time}_{c3s_variable}_daily.nc',
+        'results/preprocessing/streamflow/catchment_boundaries/merged.gpkg'
+    output:
+        'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
+    conda:
+        r_env_file
+    resources:
+        time = "01:00:00",
+        mem_mb = 32000,
+        partition = "short"
+    script:
+        'scripts/extract-c3s-data.R'
+
+
+rule merge_c3s_data:
+    input:
+        files=expand(
+            'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
+            c3s_init_time=C3S_INIT_TIME, c3s_variable=C3S_VARIABLE
+        )
+    output:
+        'results/preprocessing/C3S/{station}.parquet'
+    conda:
+        r_env_file
+    resources:
+        time = "01:00:00",
+        mem_mb = 32000,
+        partition = "short"
+    script:
+        'scripts/merge-c3s-data.R'
+
+
+rule extract_haduk_data:
+    """Extract observed climate data for each UK
+    catchment from the HadUK dataset.
+    """
+    input:
+        'data/HadUK-Grid/v1.2.0.ceda/5km/{haduk_variable}/day/v20230328/{haduk_variable}_hadukgrid_uk_5km_day_{haduk_time_range}.nc',
+        'results/preprocessing/streamflow/catchment_boundaries/merged.gpkg'
+    output:
+        'results/preprocessing/HadUK/{haduk_variable}_{haduk_time_range}.parquet',
+    conda:
+        r_env_file
+    resources:
+        time = "01:00:00",
+        mem_mb = 32000,
+        partition = "short"
+    script:
+        'scripts/extract-haduk-data.R'
+
+
+rule merge_haduk_data:
+    input:
+        files=expand(
+            'results/preprocessing/HadUK/{haduk_variable}_{haduk_time_range}.parquet',
+            haduk_variable=HADUK_VARIABLE, haduk_time_range=HADUK_TIME_RANGE
+        )
+    output:
+        'results/preprocessing/HadUK/{station}.parquet'
+    conda:
+        r_env_file
+    resources:
+        time = "01:00:00",
+        mem_mb = 32000,
+        partition = "short"
+    script:
+        'scripts/merge-haduk-data.R'
+
+
+rule extract_efas_data:
+    """Rule to pull out EFAS predictions for corresponding
+    NRFA stations.
+
+    We use this data for evaluation, and also
+    potentially as an input (e.g. to see if postprocessing
+    the predictions using ML is advantageous).
+    """
+    input:
+        'resources/efas_sites.parquet',
+        'data/efas_stations/ftp.ecmwf.int/for_louise_uni_oxford/dis_stations_SR{efas_time}00.nc',
+    output:
+        'results/preprocessing/EFAS/{efas_time}.parquet'
+    conda:
+        r_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/extract-efas-data.R'
+
+
+rule merge_efas_data:
+    input:
+        files=expand(
+            'results/preprocessing/EFAS/{efas_time}.parquet',
+            efas_time=EFAS_TIME
+        )
+    output:
+        'results/preprocessing/EFAS/{efas_station}.parquet'
+    conda:
+        r_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/merge-efas-data.R'
+
+
+# rule aggregate_efas_data:
+#     input:
+#         'results/preprocessing/EFAS/{efas_station}.parquet'
+#     output:
+#         'results/preprocessing/EFAS/seasonal/{efas_station}_{season}.parquet',
+#         'results/preprocessing/EFAS/seasonal/sme_{efas_station}_{season}.parquet'
+#     conda:
+#         r_env_file
+#     resources:
+#         time = "02:00:00",
+#         mem_mb = 8000,
+#         partition = "short"
+#     script:
+#         'scripts/aggregate-efas-data.R'
+
+
+# rule aggregate_c3s_data_single_model:
+#     input:
+#         'results/preprocessing/C3S/{subset}_{station}.parquet'
+#     output:
+#         'results/preprocessing/C3S/seasonal/sme_{subset}_{station}_{season}.parquet'
+#     params:
+#         multi_model=False
+#     conda:
+#         r_env_file
+#     resources:
+#         time = "02:00:00",
+#         mem_mb = 8000,
+#         partition = "short"
+#     script:
+#         'scripts/aggregate-c3s-data.R'
+
+
+# rule aggregate_c3s_data_multimodel:
+#     input:
+#         expand(
+#             'results/preprocessing/C3S/{subset}_{station}.parquet',
+#             subset=C3S_SUBSET,
+#             allow_missing=True
+#         )
+#     output:
+#         'results/preprocessing/C3S/seasonal/mme_{station}_{season}.parquet'
+#     params:
+#         multi_model=True
+#     conda:
+#         r_env_file
+#     resources:
+#         time = "02:00:00",
+#         mem_mb = 8000,
+#         partition = "short"
+#     script:
+#         'scripts/aggregate-c3s-data.R'
+
+
+
+# rule extract_era5_data:
+#     """Extract reanalysis climate data for each catchment."""
+#     input:
+#         'data/reanalysis/era5_reanalysis_{era5_variable}_{era5_time}.nc',
+#         'results/preprocessing/streamflow/catchment_boundaries/merged.gpkg'
+#     output:
+#         'results/preprocessing/ERA5/{era5_time}_{era5_variable}.parquet'
+#     conda:
+#         r_env_file
+#     resources:
+#         time = "02:00:00",
+#         mem_mb = 8000,
+#         partition = "short"
+#     script:
+#         'scripts/extract-era5-data.R'
+
+
+# rule merge_era5_data:
+#     """Merge data into a multivariate
+#     timeseries for each station.
+#     """
+#     input:
+#         files=expand(
+#             'results/preprocessing/ERA5/{era5_time}_{era5_variable}.parquet',
+#             era5_time=ERA5_TIME, era5_variable=ERA5_VARIABLE
+#         )
+#     output:
+#         'results/preprocessing/ERA5/{station}.parquet'
+#     conda:
+#         r_env_file
+#     resources:
+#         time = "02:00:00",
+#         mem_mb = 8000,
+#         partition = "short"
+#     script:
+#         'scripts/merge-era5-data.R'
+
+
+# rule aggregate_era5_data:
+#     input:
+#         'results/preprocessing/ERA5/{station}.parquet'
+#     output:
+#         'results/preprocessing/ERA5/seasonal/{station}_{season}.parquet'
+#     conda:
+#         r_env_file
+#     resources:
+#         time = "02:00:00",
+#         mem_mb = 8000,
+#         partition = "short"
+#     script:
+#         'scripts/aggregate-era5-data.R'
+
+
+# rule build_timeseries_dataset:
+#     """Merge dynamic and static data for each catchment."""
+#     input:
+#         metadata='resources/stations_selected.parquet',
+#         # efas_sites='resources/efas_sites.parquet',
+#         q_day='results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
+#         q_month='results/preprocessing/streamflow/timeseries/monthly/{station}.parquet',
+#         q_season='results/preprocessing/streamflow/timeseries/seasonal/{station}_{season}.parquet',
+#         # efas=expand('results/preprocessing/EFAS/seasonal/{efas_station}_{season}.parquet', efas_station=EFAS_STATION, allow_missing=True),
+#         era5_month='results/preprocessing/ERA5/{station}.parquet',
+#         era5_season='results/preprocessing/ERA5/seasonal/{station}_{season}.parquet',
+#         sme=expand('results/preprocessing/C3S/seasonal/sme_{subset}_{station}_{season}.parquet', subset=C3S_SUBSET, allow_missing=True),
+#         mme='results/preprocessing/C3S/seasonal/mme_{station}_{season}.parquet'
+#     output:
+#         'results/preprocessing/merged/{station}_{season}.parquet'
+#     conda:
+#         r_env_file
+#         # 'envs/conda_environment_r.yml'
+#     resources:
+#         time = "06:00:00",
+#         mem_mb = 32000,
+#         partition = "short"
+#     script:
+#         'scripts/build-timeseries-dataset.R'
+
+
+# NOT USED:
+
+
+# def extract_haduk_field_data_output(wildcards):
+#     file_names = expand(
+#         'results/preprocessing/HadUK/{station}/{haduk_variable}/part-0.parquet',
+#         haduk_variable=HADUK_VARIABLE,
+#         station=STATIONS
+#     )
+#     return file_names
+
+
+# def fetch_daily_streamflow_data_output(wildcards):
+#     file_names = expand(
+#         'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
+#         station=STATIONS
+#     )
+#     return file_names
+# def fetch_monthly_streamflow_data_output(wildcards):
+#     file_names = expand(
+#         'results/preprocessing/streamflow/timeseries/monthly/{station}.parquet',
+#         station=STATIONS
+#     )
+#     return file_names
+# def fetch_seasonal_streamflow_data_output(wildcards):
+#     file_names = expand(
+#         'results/preprocessing/streamflow/timeseries/seasonal/{station}.parquet',
+#         station=STATIONS
+#     )
+#     return file_names
+# def extract_efas_data_output(wildcards):
+#     file_names = expand(
+#         'results/preprocessing/EFAS/{efas_station}.parquet',
+#         efas_station=EFAS_STATIONS
+#     )
+#     return file_names
+# def extract_era5_field_data_output(wildcards):
+#     file_names = expand(
+#         'results/preprocessing/ERA5/{era5_time}_{era5_variable}.parquet',
+#         era5_time=ERA5_TIME,
+#         era5_variable=ERA5_VARIABLE,
+#     )
+#     return file_names
+# def extract_c3s_field_data_output(wildcards):
+#     file_names = expand(
+#         'results/preprocessing/C3S/{station}_{season}.parquet',
+#         station=STATION, season=SEASON
+#         # 'results/preprocessing/C3S/{subset}_{c3s_init_time}_{c3s_variable}.parquet',
+#         # subset=SUBSET,
+#         # c3s_init_time=C3S_INIT_TIME,
+#         # c3s_variable=C3S_VARIABLE
+#     )
+#     return file_names

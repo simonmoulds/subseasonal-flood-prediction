@@ -1,0 +1,107 @@
+---
+reanalysis:
+  root: data/reanalysis
+  start: 1960
+  end: 2017
+
+hindcast:
+  root: data/C3S_hindcast
+  start: 1981
+  end: 2016
+  model: ecmf_SEAS5-v20171101
+  members: 0..24
+
+haduk:
+  root: data/HadUK
+  product: HadUK-Grid
+  version: v1.2.0.ceda
+  res: 5km
+  time_res: day
+
+eobs:
+  root: data/EOBS
+
+streamflow:
+  nrfa:
+    root:
+    metadata:
+  ukbn:
+    root:
+    metadata:
+  grdc:
+    root:
+    metadata:
+
+tuning:
+  tune_start: 1994
+  tune_end: 2003
+  predictors:
+    - precip_monthly_mean_mean
+    - precip_monthly_mean_maximum
+    - temp_monthly_mean_mean
+    - Qd_mean_ant_1
+    - Qd_mean_ant_2
+    - Qd_mean_ant_3
+    - precip_monthly_mean_ant_1
+    - precip_monthly_mean_ant_2
+    - precip_monthly_mean_ant_3
+    - area
+    - elev_mean
+    - dpsbar
+    - sand_perc
+    - silt_perc
+    - clay_perc
+    - porosity_hypres
+    - conductivity_hypres
+    - soil_depth_pelletier
+    - dwood_perc
+    - ewood_perc
+    - crop_perc
+    - urban_perc
+    - reservoir_cap
+    - Q5_comp
+    - Q95_comp
+    - q_mean_comp
+    - baseflow_index_comp
+    - slope_fdc_comp
+
+prediction:
+  train_start: 1994
+  test_start: 2004
+  test_end: 2016
+  n_year_buffer: 0
+  quantile_start: 0.01
+  quantile_end: 0.99
+  quantile_interval: 0.02
+  predictand:
+    - Qd_maximum
+  predictors:
+    - precip_monthly_mean_mean
+    - precip_monthly_mean_maximum
+    - temp_monthly_mean_mean
+    - Qd_mean_ant_1
+    - Qd_mean_ant_2
+    - Qd_mean_ant_3
+    - precip_monthly_mean_ant_1
+    - precip_monthly_mean_ant_2
+    - precip_monthly_mean_ant_3
+  static_predictors:
+    - area
+    - elev_mean
+    - dpsbar
+    - sand_perc
+    - silt_perc
+    - clay_perc
+    - porosity_hypres
+    - conductivity_hypres
+    - soil_depth_pelletier
+    - dwood_perc
+    - ewood_perc
+    - crop_perc
+    - urban_perc
+    - reservoir_cap
+    - Q5_comp
+    - Q95_comp
+    - q_mean_comp
+    - baseflow_index_comp
+    - slope_fdc_comp
