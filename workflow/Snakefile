@@ -223,6 +223,21 @@ rule merge_efas_data:
         'scripts/merge-efas-data.R'
 
 
+# rule bias_correct_c3s:
+#     input:
+#         'results/preprocessing/C3S/{station}.parquet',
+#         'results/preprocessing/HadUK/{station}.parquet'
+#     output:
+#         'results/preprocessing/C3S/{station}_bc.parquet'
+#     conda:
+#         r_env_file
+#     resources:
+#         time = "00:15:00",
+#         mem_mb = 8000,
+#         partition = "short"
+#     script:
+#         'scripts/merge-efas-data.R'
+
 # rule aggregate_efas_data:
 #     input:
 #         'results/preprocessing/EFAS/{efas_station}.parquet'
