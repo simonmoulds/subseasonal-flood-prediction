@@ -1,0 +1,41 @@
+# Main entrypoint of the workflow.
+# Please follow the best practices:
+# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
+# in particular regarding the standardized folder structure mentioned there.
+
+
+import platform
+import math
+import re
+import pandas as pd
+import pyarrow
+
+
+configfile: 'config/config.yml'
+
+
+include: 'rules/common.smk'
+include: 'rules/platform.smk'
+
+
+rule preprocessing:
+    input:
+        expand(
+            'results/preprocessing/C3S/precip_disagg/ecmf_SEAS5-v20171101_hindcast_S{c3s_init_time}_tp_daily_disagg.nc',
+            c3s_init_time=C3S_INIT_TIME
+        ),
+
+
+rule disagg_precip:
+    input:
+        'data/C3S_hindcast_daily_SEAS5/ecmf_SEAS5-v20171101_hindcast_S{c3s_init_time}_tp_daily.nc',
+    output:
+        'results/preprocessing/C3S/precip_disagg/ecmf_SEAS5-v20171101_hindcast_S{c3s_init_time}_tp_daily_disagg.nc',
+    conda:
+        'envs/conda_environment_base.yml'
+    resources:
+        time = "01:00:00",
+        mem_mb = 32000,
+        partition = "short"
+    script:
+        'scripts/disagg-precip.py'

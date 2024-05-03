@@ -24,22 +24,22 @@ rule preprocessing:
             'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
             station=STATIONS
         ),
-        expand(
-            'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
-            c3s_variable=C3S_VARIABLE, c3s_init_time=C3S_INIT_TIME
-        ),
-        expand(
-            'results/preprocessing/HadUK/{haduk_variable}_{haduk_time_range}.parquet',
-            haduk_variable=HADUK_VARIABLE, haduk_time_range=HADUK_TIME_RANGE
-        ),
-        expand(
-            'results/preprocessing/EFAS/{efas_time}.parquet',
-            efas_time=EFAS_TIME
-        ),
-        expand(
-            'results/preprocessing/EFAS/{efas_station}.parquet',
-            efas_station=EFAS_STATIONS
-        ),
+        # expand(
+        #     'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
+        #     c3s_variable=C3S_VARIABLE, c3s_init_time=C3S_INIT_TIME
+        # ),
+        # expand(
+        #     'results/preprocessing/HadUK/{haduk_variable}_{haduk_time_range}.parquet',
+        #     haduk_variable=HADUK_VARIABLE, haduk_time_range=HADUK_TIME_RANGE
+        # ),
+        # expand(
+        #     'results/preprocessing/EFAS/{efas_time}.parquet',
+        #     efas_time=EFAS_TIME
+        # ),
+        # expand(
+        #     'results/preprocessing/EFAS/{efas_station}.parquet',
+        #     efas_station=EFAS_STATIONS
+        # ),
         expand(
             'results/preprocessing/C3S/{station}.parquet',
             station=STATIONS
@@ -106,32 +106,67 @@ rule fetch_streamflow_data:
         'scripts/fetch-streamflow-data.R'
 
 
-rule extract_c3s_data:
-    """Extract precipitation/temperature for each catchment.
-
-    Note that only data from model/members specified in the
-    configuration file is returned.
-    """
+rule extract_c3s_inst_data:
+    """Extract instantaneous data for each catchment."""
     input:
-        'data/C3S_hindcast_daily_SEAS5/ecmf_SEAS5-v20171101_hindcast_S{c3s_init_time}_{c3s_variable}_daily.nc',
-        'results/preprocessing/streamflow/catchment_boundaries/merged.gpkg'
+        'results/preprocessing/streamflow/catchment_boundaries/merged.gpkg',
+        'data/C3S_hindcast_daily_SEAS5/ecmf_SEAS5-v20171101_hindcast_S{c3s_init_time}_{c3s_inst_variable}_daily.nc'
     output:
-        'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
+        'results/preprocessing/C3S/{c3s_inst_variable}_{c3s_init_time}.parquet',
     conda:
         r_env_file
     resources:
         time = "01:00:00",
         mem_mb = 32000,
         partition = "short"
-    script:
-        'scripts/extract-c3s-data.R'
+    # script:
+    #     'scripts/extract-c3s-data.R'
+    shell:
+        r"""
+        Rscript workflow/scripts/extract-c3s-data.R \
+            --var {wildcards.c3s_inst_variable} \
+            --poly {input[0]} \
+            --input {input[1]} \
+            --output {output}
+        """
+
+
+rule extract_c3s_flux_data:
+    """Extract flux data for each catchment."""
+    input:
+        'results/preprocessing/streamflow/catchment_boundaries/merged.gpkg',
+        'results/preprocessing/C3S/precip_disagg/ecmf_SEAS5-v20171101_hindcast_S{c3s_init_time}_{c3s_flux_variable}_daily_disagg.nc'
+    output:
+        'results/preprocessing/C3S/{c3s_flux_variable}_{c3s_init_time}.parquet',
+    conda:
+        r_env_file
+    resources:
+        time = "01:00:00",
+        mem_mb = 32000,
+        partition = "short"
+    # script:
+    #     'scripts/extract-c3s-data.R'
+    shell:
+        r"""
+        Rscript workflow/scripts/extract-c3s-data.R \
+            --var {wildcards.c3s_flux_variable} \
+            --poly {input[0]} \
+            --input {input[1]} \
+            --output {output}
+        """
 
 
 rule merge_c3s_data:
     input:
-        files=expand(
-            'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
-            c3s_init_time=C3S_INIT_TIME, c3s_variable=C3S_VARIABLE
+        flux_files=expand(
+            'results/preprocessing/C3S/{c3s_flux_variable}_{c3s_init_time}.parquet',
+            c3s_init_time=C3S_INIT_TIME,
+            c3s_flux_variable=C3S_FLUX_VARIABLE
+        ),
+        inst_files=expand(
+            'results/preprocessing/C3S/{c3s_inst_variable}_{c3s_init_time}.parquet',
+            c3s_init_time=C3S_INIT_TIME,
+            c3s_inst_variable=C3S_INST_VARIABLE
         )
     output:
         'results/preprocessing/C3S/{station}.parquet'

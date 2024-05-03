@@ -46,19 +46,6 @@ parse_c3s_filename <- function(f) {
 }
 
 
-## Parse ensemble specification (i.e. which models/members to use)
-parse_range <- function(range_str) {
-  if (grepl("\\.\\.", range_str)) {
-    range_parts <- strsplit(range_str, "\\.\\.")[[1]]
-    start <- as.integer(range_parts[1])
-    end <- as.integer(range_parts[2])
-    return(seq(start, end))
-  } else {
-    return(NULL)
-  }
-}
-
-
 construct_pattern <- function(start_year, end_year, system, variable) {
   years_regex <- paste0(seq(start_year, end_year), collapse = "|")
   ptn <- paste0(

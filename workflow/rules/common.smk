@@ -24,7 +24,9 @@ STATIONS = CAMELS_STATIONS
 c3s_start_year = 1981
 c3s_end_year = 2016
 
-C3S_VARIABLE = ['tp', 't2m']
+C3S_INST_VARIABLE = ['t2m']
+C3S_FLUX_VARIABLE = ['tp']
+C3S_VARIABLE = C3S_INST_VARIABLE + C3S_FLUX_VARIABLE
 C3S_YEARS = [yr for yr in range(c3s_start_year, c3s_end_year + 1)]
 C3S_INIT_MONTH = [m for m in range(1, 13)]
 C3S_INIT_TIME = [str(year) + str(month).zfill(2) + '01' for year, month in product(C3S_YEARS, C3S_INIT_MONTH)]
@@ -66,21 +68,22 @@ EFAS_YEARS = [yr for yr in range(1991, 2023)]
 EFAS_MONTHS = [m for m in range(1, 13)]
 EFAS_TIME = [str(year) + str(month).zfill(2) + '01' for year, month in product(EFAS_YEARS, EFAS_MONTHS)]
 
-# Adjust if on dev platform
-if current_platform == "Darwin":
-    STATIONS = STATIONS[slice(0, 10)]
-    C3S_VARIABLE = ['tp']
-    C3S_YEARS = [yr for yr in range(2010, 2011)]
-    C3S_INIT_MONTH = [m for m in range(1, 13)]
-    C3S_INIT_TIME = [str(year) + str(month).zfill(2) + '01' for year, month in product(C3S_YEARS, C3S_INIT_MONTH)]
+# # Adjust if on dev platform
+# if current_platform == "Darwin":
+#     STATIONS = STATIONS[slice(0, 10)]
+#     C3S_INST_VARIABLE = []
+#     C3S_FLUX_VARIABLE = ['tp']
+#     C3S_YEARS = [yr for yr in range(2010, 2011)]
+#     C3S_INIT_MONTH = [m for m in range(1, 13)]
+#     C3S_INIT_TIME = [str(year) + str(month).zfill(2) + '01' for year, month in product(C3S_YEARS, C3S_INIT_MONTH)]
 
-    HADUK_VARIABLE = ['rainfall']
-    HADUK_YEARS = [yr for yr in range(2022, 2023)]
-    HADUK_TIME_RANGE = haduk_time_ranges(2022, 2022)
+#     HADUK_VARIABLE = ['rainfall']
+#     HADUK_YEARS = [yr for yr in range(2022, 2023)]
+#     HADUK_TIME_RANGE = haduk_time_ranges(2022, 2022)
 
-    EFAS_YEARS = [1991, 2020]
-    EFAS_MONTHS = [m for m in range(1, 13)]
-    EFAS_TIME = [str(year) + str(month).zfill(2) + '01' for year, month in product(EFAS_YEARS, EFAS_MONTHS)]
+#     EFAS_YEARS = [1991, 2020]
+#     EFAS_MONTHS = [m for m in range(1, 13)]
+#     EFAS_TIME = [str(year) + str(month).zfill(2) + '01' for year, month in product(EFAS_YEARS, EFAS_MONTHS)]
 
 EFAS_METADATA = pd.read_parquet('resources/efas_sites.parquet')
 EFAS_METADATA = EFAS_METADATA[EFAS_METADATA['nrfa_id'].isin(STATIONS)]
@@ -91,6 +94,8 @@ wildcard_constraints:
     station='|'.join([re.escape(x) for x in STATIONS]),
     efas_station='|'.join([re.escape(str(x)) for x in EFAS_STATIONS]),
     efas_time='|'.join([re.escape(str(x)) for x in EFAS_TIME]),
+    c3s_inst_variable='|'.join([re.escape(x) for x in C3S_INST_VARIABLE]),
+    c3s_flux_variable='|'.join([re.escape(x) for x in C3S_FLUX_VARIABLE]),
     c3s_variable='|'.join([re.escape(x) for x in C3S_VARIABLE]),
     c3s_init_time='|'.join([re.escape(str(x)) for x in C3S_INIT_TIME]),
     haduk_time_range='|'.join([re.escape(str(x)) for x in HADUK_TIME_RANGE]),

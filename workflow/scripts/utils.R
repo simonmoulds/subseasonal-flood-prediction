@@ -65,6 +65,20 @@ options(readr.show_progress = FALSE)
 ## }
 
 
+
+## Parse ensemble specification (i.e. which models/members to use)
+parse_range <- function(range_str) {
+  if (grepl("\\.\\.", range_str)) {
+    range_parts <- strsplit(range_str, "\\.\\.")[[1]]
+    start <- as.integer(range_parts[1])
+    end <- as.integer(range_parts[2])
+    return(seq(start, end))
+  } else {
+    return(NULL)
+  }
+}
+
+
 rename_variables <- function(ds, ...) {
   rainfall_names <- c("single_level_tp", "rainfall", "tprate")
   temperature_names <- c("single_level_t2m", "tas", "t2m")
