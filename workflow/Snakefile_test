@@ -1,0 +1,33 @@
+# Main entrypoint of the workflow. 
+# Please follow the best practices: 
+# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
+# in particular regarding the standardized folder structure mentioned there. 
+
+
+import platform
+import math
+import re
+import pandas as pd
+import pyarrow
+
+
+configfile: 'config/config.yml'
+
+
+include: 'rules/common.smk'
+include: 'rules/platform.smk'
+
+
+rule test:
+    input:
+        expand('results/testing/prediction/prediction_results_{member}.p', member=C3S_MEMBER) 
+
+rule test_model:
+    input: 
+        'results/training/latest_run_dir.txt'
+    output:
+        'results/testing/prediction/prediction_results_{member}.p'
+    conda: 
+        'envs/conda_environment_nh.yml'
+    script:
+        'scripts/testing.py'

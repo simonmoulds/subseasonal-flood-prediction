@@ -3,7 +3,10 @@
 ## ## Load packages with pacman
 ## p_load(tidyverse, arrow, lubridate, zoo, yaml)
 ## p_load(sf, terra, exactextractr)
-library(tidyverse)
+library(dplyr)
+library(readr)
+library(tidyr)
+library(stringr)
 library(arrow)
 library(lubridate)
 library(zoo)

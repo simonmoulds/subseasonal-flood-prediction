@@ -1,0 +1,43 @@
+# Main entrypoint of the workflow. 
+# Please follow the best practices: 
+# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
+# in particular regarding the standardized folder structure mentioned there. 
+
+
+import platform
+import math
+import re
+import pandas as pd
+import pyarrow
+
+
+configfile: 'config/config.yml'
+
+
+include: 'rules/common.smk'
+include: 'rules/platform.smk'
+
+
+rule train:
+    input:
+        'results/training/latest_run_dir.txt'
+
+rule train_model:
+    input: 
+        'results/preprocessing/merged/basin_list.txt',
+        'results/preprocessing/merged/attributes/attributes.csv',
+        # expand(
+        #     'results/preprocessing/merged/time_series/pseudo/{station}.nc', station=STATIONS
+        # ),
+        # expand(
+        #     'results/preprocessing/merged/time_series/{member}/{station}.nc',
+        #     member=C3S_MEMBER, station=STATIONS
+        # )
+    params:
+        'resources/config.yml.example'
+    output:
+        'results/training/latest_run_dir.txt'
+    conda: 
+        'envs/conda_environment_nh.yml'
+    script:
+        'scripts/training.py'

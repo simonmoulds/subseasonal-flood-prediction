@@ -5,6 +5,9 @@ if (!"exactextractr" %in% installed.packages()) {
   install.packages("exactextractr", repos='https://cloud.r-project.org')
 }
 
+if (!"qmap" %in% installed.packages()) { 
+  install.packages("qmap", repos='https://cloud.r-project.org')
+}
 ## if (!"terra" %in% installed.packages()) {
 ##   install.packages("terra", repos='https://cloud.r-project.org')
 ## }

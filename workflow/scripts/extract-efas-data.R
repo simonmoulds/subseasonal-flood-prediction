@@ -55,11 +55,11 @@ data <- data |>
 ## Normalize by catchment area
 data <- data |>
   left_join(catchment_area, by = "id") |>
-  mutate(value = value / efas_catchment_area_ldd) |>
+  mutate(value = (value * 60 * 60 * 24) / (efas_catchment_area_ldd * 1000 * 1000) * 1000) |>
+  # mutate(value = value / efas_catchment_area_ldd) |>
   mutate(lead_time = interval(init_time, time) %/% days(1))
 
 nc_close(nc)
-
 
 data <- data |>
   dplyr::select(

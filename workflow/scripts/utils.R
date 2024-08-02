@@ -1,7 +1,10 @@
 ## Author : Simon Moulds
 ## Date   : Nov-Dec 2021
 
-library(tidyverse)
+library(dplyr)
+library(readr)
+library(tidyr)
+library(stringr)
 library(arrow)
 library(zoo)
 library(terra)

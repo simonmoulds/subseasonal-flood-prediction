@@ -20,10 +20,12 @@ CAMELS_STATIONS = list(
     METADATA['id'][(METADATA['has_camels'])].astype(int).astype(str)
 )
 STATIONS = CAMELS_STATIONS
+# STATIONS = STATIONS[0:8] # TESTING
 
 c3s_start_year = 1981
 c3s_end_year = 2016
 
+C3S_MEMBER = [str(i) for i in range(0, 25)]
 C3S_INST_VARIABLE = ['t2m']
 C3S_FLUX_VARIABLE = ['tp']
 C3S_VARIABLE = C3S_INST_VARIABLE + C3S_FLUX_VARIABLE
@@ -94,6 +96,7 @@ wildcard_constraints:
     station='|'.join([re.escape(x) for x in STATIONS]),
     efas_station='|'.join([re.escape(str(x)) for x in EFAS_STATIONS]),
     efas_time='|'.join([re.escape(str(x)) for x in EFAS_TIME]),
+    member='|'.join([re.escape(str(x)) for x in C3S_MEMBER]),
     c3s_inst_variable='|'.join([re.escape(x) for x in C3S_INST_VARIABLE]),
     c3s_flux_variable='|'.join([re.escape(x) for x in C3S_FLUX_VARIABLE]),
     c3s_variable='|'.join([re.escape(x) for x in C3S_VARIABLE]),

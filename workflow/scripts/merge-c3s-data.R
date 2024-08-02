@@ -11,9 +11,12 @@ if (exists("snakemake")) {
   output_filename <- snakemake@output[[1]]
   snakemake@source("utils.R")
 } else {
-  input_files <- list.files("results/preprocessing/C3S", pattern = "^SEAS5-v20171101_[0-9]{8}_.*.parquet", full.names = TRUE)
-  station <- 10002
-  output_filename <- "results/preprocessing/ERA5/10002.parquet"
+  config <- read_yaml("config/config.yml")
+  flux_input_files <- list.files("results/preprocessing/C3S", pattern = "tp_.*.parquet", full.names = TRUE)
+  inst_input_files <- list.files("results/preprocessing/C3S", pattern = "t2m_.*.parquet", full.names = TRUE)
+  station <- "10002"
+  output_filename <- "results/preprocessing/C3S/10002.parquet"
+  source("workflow/scripts/utils.R")
 }
 
 input_files <- c(flux_input_files, inst_input_files)
@@ -24,7 +27,6 @@ ds <- open_dataset(input_files, unify_schemas = FALSE)
 ## Restrict members
 selected_members <- config$hindcast$members |> parse_range()
 ds <- ds %>% filter(member %in% selected_members)
-
 ds <- ds %>% filter(id %in% station)
 ds <- ds %>% collect()
 

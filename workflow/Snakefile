@@ -20,10 +20,10 @@ include: 'rules/platform.smk'
 
 rule preprocessing:
     input:
-        expand(
-            'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
-            station=STATIONS
-        ),
+        # expand(
+        #     'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
+        #     station=STATIONS
+        # ),
         # expand(
         #     'results/preprocessing/C3S/{c3s_variable}_{c3s_init_time}.parquet',
         #     c3s_variable=C3S_VARIABLE, c3s_init_time=C3S_INIT_TIME
@@ -37,17 +37,17 @@ rule preprocessing:
         #     efas_time=EFAS_TIME
         # ),
         # expand(
-        #     'results/preprocessing/EFAS/{efas_station}.parquet',
+        #     'results/preprocessing/EFAS/{efas_station}_bc.parquet',
         #     efas_station=EFAS_STATIONS
         # ),
-        expand(
-            'results/preprocessing/C3S/{station}.parquet',
-            station=STATIONS
-        ),
-        expand(
-            'results/preprocessing/HadUK/{station}.parquet',
-            station=STATIONS
-        )
+        # expand(
+        #     'results/preprocessing/C3S/{station}.parquet',
+        #     station=STATIONS
+        # ),
+        # expand(
+        #     'results/preprocessing/HadUK/{station}.parquet',
+        #     station=STATIONS
+        # )
         # expand(
         #     'results/preprocessing/merged/{station}_{season}.parquet',
         #     station=STATIONS, season=SEASON
@@ -60,6 +60,21 @@ rule preprocessing:
         #     'results/preprocessing/EFAS/seasonal/sme_{efas_station}_{season}.parquet',
         #     efas_station=EFAS_STATIONS, season=SEASON
         # ),
+        # expand(
+        #     'results/preprocessing/C3S/{station}_bc.parquet', station=STATIONS
+        # )
+        # expand(
+        #     'results/preprocessing/merged/pseudo/time_series/{station}.nc', station=STATIONS
+        # ),
+        'results/preprocessing/merged/attributes/attributes.csv',
+        'results/preprocessing/merged/basin_list.txt',
+        # expand(
+        #     'results/preprocessing/merged/time_series/pseudo/{station}.nc', station=STATIONS
+        # ),
+        # expand(
+        #     'results/preprocessing/merged/time_series/{member}/{station}.nc',
+        #     member=C3S_MEMBER, station=STATIONS
+        # )
 
 
 rule fetch_catchment_boundary:
@@ -119,8 +134,6 @@ rule extract_c3s_inst_data:
         time = "01:00:00",
         mem_mb = 32000,
         partition = "short"
-    # script:
-    #     'scripts/extract-c3s-data.R'
     shell:
         r"""
         Rscript workflow/scripts/extract-c3s-data.R \
@@ -144,8 +157,6 @@ rule extract_c3s_flux_data:
         time = "01:00:00",
         mem_mb = 32000,
         partition = "short"
-    # script:
-    #     'scripts/extract-c3s-data.R'
     shell:
         r"""
         Rscript workflow/scripts/extract-c3s-data.R \
@@ -258,20 +269,99 @@ rule merge_efas_data:
         'scripts/merge-efas-data.R'
 
 
-# rule bias_correct_c3s:
-#     input:
-#         'results/preprocessing/C3S/{station}.parquet',
-#         'results/preprocessing/HadUK/{station}.parquet'
-#     output:
-#         'results/preprocessing/C3S/{station}_bc.parquet'
-#     conda:
-#         r_env_file
-#     resources:
-#         time = "00:15:00",
-#         mem_mb = 8000,
-#         partition = "short"
-#     script:
-#         'scripts/merge-efas-data.R'
+rule bias_correct_efas:
+    input: 
+        'results/preprocessing/EFAS/{efas_station}.parquet',
+        'results/preprocessing/streamflow/timeseries/daily/{efas_station}.parquet',
+    output:
+        'results/preprocessing/EFAS/{efas_station}_bc.parquet'
+    conda:
+        r_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/bias-correct-efas.R'
+
+
+rule bias_correct_c3s:
+    input:
+        'results/preprocessing/C3S/{station}.parquet',
+        'results/preprocessing/HadUK/{station}.parquet'
+    output:
+        'results/preprocessing/C3S/{station}_bc.parquet'
+    conda:
+        r_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/bias-correct-c3s.R'
+
+
+rule create_static_attributes:
+    output:
+        'results/preprocessing/merged/attributes/attributes.csv'
+    params:
+        STATIONS
+    conda: 
+        py_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/create-attributes.py'
+
+rule create_basin_files:
+    input:
+        'results/preprocessing/merged/attributes/attributes.csv'
+    output:
+        'results/preprocessing/merged/basin_list.txt'
+    params:
+        STATIONS
+    conda: 
+        py_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/create-basin-list.py'
+    
+
+rule create_forecast_dataset_training_data:
+    input: 
+        'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
+        'results/preprocessing/HadUK/{station}.parquet'
+    output:
+        'results/preprocessing/merged/time_series/pseudo/{station}.nc',
+    conda: 
+        py_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/create-training-data.py'
+
+rule create_forecast_dataset_test_data:
+    input:
+        'results/preprocessing/streamflow/timeseries/daily/{station}.parquet',
+        'results/preprocessing/HadUK/{station}.parquet',
+        'results/preprocessing/C3S/{station}_bc.parquet'
+    output:
+        'results/preprocessing/merged/time_series/{member}/{station}.nc',
+    conda: 
+        py_env_file
+    resources:
+        time = "00:15:00",
+        mem_mb = 8000,
+        partition = "short"
+    script:
+        'scripts/create-forecast-data.py'
 
 # rule aggregate_efas_data:
 #     input:
